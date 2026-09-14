@@ -1,0 +1,7 @@
+{
+  "name": "Language Trainer",
+  "description": "Personal language trainer for English and Hindi, with Marathi and Japanese side learning, featuring vocabulary, grammar, spaced repetition, quizzes, and speaking practice.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
+
