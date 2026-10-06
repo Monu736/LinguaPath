@@ -3,7 +3,6 @@
     <item
         android:width="66dp"
         android:height="66dp"
-        android:drawable="@drawable/ic_launcher_fg_img"
+        android:drawable="@drawable/ic_linguapath_fg"
         android:gravity="center" />
 </layer-list>
-

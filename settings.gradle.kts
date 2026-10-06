@@ -22,6 +22,6 @@ dependencyResolutionManagement {
   }
 }
 
-rootProject.name = "Language Trainer"
+rootProject.name = "Linguapath"
 
 include(":app")

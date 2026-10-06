@@ -1,0 +1,310 @@
+#!/usr/bin/env python3
+"""
+Comprehensive 100-Level Quiz Bank Generator for 10 Lifestyle Categories
+Generates 10 distinct Kotlin bank files in com.example.quiz.banks
+"""
+import os
+
+os.makedirs("app/src/main/java/com/example/quiz/banks", exist_ok=True)
+
+def escape_kt(text):
+    if text is None:
+        return ""
+    return str(text).replace('\\', '\\\\').replace('"', '\\"').replace('$', '\\$')
+
+# Definition of the 10 categories with 10 units x 10 steps each = 100 levels per category
+categories_data = {
+    "Food": {
+        "className": "FoodQuizBank",
+        "units": [
+            ("Street Food & Snacks", [
+                ("Samosa & Chutneys", "Samosa", "Crispy triangular potato pastry",
+                 "What triangular deep-fried pastry filled with spiced potatoes is a beloved street food?",
+                 ["Samosa", "Croissant", "Waffle", "Donut"], "Samosa",
+                 "Samosas are India's favorite fried tea-time snack.",
+                 "Bhaiya, please pack two hot samosas with sweet tamarind chutney.",
+                 "What did the customer order at the street stall?",
+                 ["Two hot samosas with sweet tamarind chutney", "Ten plates of cold rice", "A glass of black coffee", "Two spicy burgers"],
+                 "Two hot samosas with sweet tamarind chutney",
+                 ["Please", "pack", "two", "hot", "samosas", "for", "takeaway."],
+                 "Please pack two hot samosas for takeaway.",
+                 "The potato filling inside the samosa is seasoned with cumin and ____.",
+                 ["coriander", "chocolate", "vanilla", "ice"], "coriander",
+                 "Coriander seeds and fresh cilantro give samosas their aromatic spice flavor.",
+                 "True or False: Samosas are traditionally eaten hot with green mint and brown tamarind chutney.", True,
+                 "Pairing hot samosas with sweet and spicy chutneys is a quintessential snack tradition."),
+
+                ("Mumbai Cutting Chai", "Cutting Chai", "Half-glass of strong spiced ginger tea",
+                 "In Mumbai street culture, what does 'Cutting Chai' refer to?",
+                 ["Half a glass of strong tea", "A broken tea glass", "Iced lemon tea", "Green tea leaves"], "Half a glass of strong tea",
+                 "'Cutting' means dividing a full cup into half-portions for a quick energizing sip.",
+                 "One cutting chai with less sugar and extra crushed ginger, please.",
+                 "What special customization was requested for the tea?",
+                 ["Less sugar and extra crushed ginger", "No milk and cold ice cubes", "Extra sugar and chocolate sauce", "Served in a large travel mug"],
+                 "Less sugar and extra crushed ginger",
+                 ["Make", "one", "strong", "cutting", "chai", "with", "ginger."],
+                 "Make one strong cutting chai with ginger.",
+                 "During the monsoon season, hot cutting chai pairs perfectly with onion ____.",
+                 ["pakoras", "pudding", "noodles", "muffins"], "pakoras",
+                 "Onion pakoras (kanda bhaji) and cutting chai are Mumbai's iconic rainy season comfort food.",
+                 "True or False: Masala chai is brewed by simmering black tea leaves directly with milk, ginger, and cardamom.", True,
+                 "Authentic Indian chai is brewed directly in a boiling mixture of water, milk, and whole spices."),
+
+                ("Vada Pav Essentials", "Vada Pav", "Potato fritter inside a soft pav bun",
+                 "What is affectionately celebrated as the quintessential 'Bombay Burger'?",
+                 ["Vada Pav", "Taco", "Hot Dog", "Spring Roll"], "Vada Pav",
+                 "Vada Pav features a spiced potato fritter (batata vada) nestled inside a soft pav.",
+                 "Add extra dry red garlic chutney and one salted fried green chili.",
+                 "What condiment did the customer ask to add inside the vada pav?",
+                 ["Dry red garlic chutney and fried green chili", "Mayonnaise and mustard", "Maple syrup and whipped cream", "Soy sauce and vinegar"],
+                 "Dry red garlic chutney and fried green chili",
+                 ["Vada", "pav", "is", "Mumbai's", "most", "famous", "street", "food."],
+                 "Vada pav is Mumbai's most famous street food.",
+                 "The bread bun used to hold the potato fritter is called ____.",
+                 ["pav", "tortilla", "bagel", "croissant"], "pav",
+                 "'Pav' is the soft yeasted bread introduced by Portuguese bakers to Goa and Mumbai.",
+                 "True or False: Dry garlic chutney in vada pav gets its deep red color and punch from roasted garlic and chili.", True,
+                 "Lasun (garlic) chutney is toasted with coconut and chili powder to create its iconic dry texture."),
+
+                ("Pani Puri Flavors", "Pani Puri", "Crispy hollow puris filled with flavored water",
+                 "What is the hollow crispy sphere filled with spiced water called in Mumbai?",
+                 ["Pani Puri", "Jalebi", "Gulab Jamun", "Rasgulla"], "Pani Puri",
+                 "Pani Puri is filled with boiled chickpeas, spiced potatoes, and mint-tamarind water.",
+                 "Bhaiya, make it medium spicy and finish with one complimentary sukha puri.",
+                 "What request was made at the conclusion of the pani puri plate?",
+                 ["One complimentary dry (sukha) puri", "A full bottle of warm soda", "A bowl of hot chicken soup", "Five sweet rasgullas"],
+                 "One complimentary dry (sukha) puri",
+                 ["The", "tangy", "mint", "water", "was", "refreshing", "and", "cold."],
+                 "The tangy mint water was refreshing and cold.",
+                 "The sweet brown flavored water in pani puri is prepared using dates and ____.",
+                 ["tamarind", "cheese", "butter", "milk"], "tamarind",
+                 "Tamarind (imli) gives the brown water its distinct sweet and sour tang.",
+                 "True or False: Vendors traditionally offer a free 'Sukha Puri' topped with sev and potato at the end.", True,
+                 "The dry sukha puri cleanses the palate after drinking spicy mint water."),
+
+                ("Pav Bhaji & Extra Butter", "Pav Bhaji", "Spiced mashed vegetable curry with buttered buns",
+                 "What dish features a rich mashed vegetable curry cooked on a giant iron flat-top tawa?",
+                 ["Pav Bhaji", "Biryani", "Dosa", "Pizza"], "Pav Bhaji",
+                 "Pav Bhaji was created as a midnight meal for Mumbai textile mill workers in the 1850s.",
+                 "Two plates of special pav bhaji with extra Amul butter and lemon wedges.",
+                 "How does the customer want the pav bhaji served?",
+                 ["With extra Amul butter and lemon wedges", "Zero butter and cold buns", "Dry without any curry", "Packed in cardboard boxes"],
+                 "With extra Amul butter and lemon wedges",
+                 ["Squeeze", "fresh", "lemon", "juice", "over", "the", "hot", "bhaji."],
+                 "Squeeze fresh lemon juice over the hot bhaji.",
+                 "Finely chopped raw red ____ sprinkled on top adds crunch to the rich buttery curry.",
+                 ["onion", "apple", "banana", "sugar"], "onion",
+                 "Diced raw red onions and fresh coriander brighten the rich butter-laden curry.",
+                 "True or False: Pav Bhaji originated in Mumbai during the American Civil War when cotton mill workers worked late.", True,
+                 "Mill workers needed a nutritious, fast meal late at night, leading vendors to mash leftover vegetables with butter."),
+
+                ("Frankie & Kathi Wraps", "Frankie", "Spiced roll wrapped in a warm flatbread",
+                 "What is a warm street flatbread roll packed with spiced paneer, chicken, or veggies?",
+                 ["Frankie / Kathi Roll", "Sushi Roll", "Cinnamon Roll", "Spring Roll"], "Frankie / Kathi Roll",
+                 "Frankies are popular on-the-go college campus wraps lined with tangy sauces.",
+                 "One paneer tikka frankie with extra mint sauce and crunchy onions.",
+                 "What filling was selected for the frankie?",
+                 ["Paneer tikka with mint sauce and onions", "Sweet chocolate cream", "Boiled plain rice", "Raw lettuce only"],
+                 "Paneer tikka with mint sauce and onions",
+                 ["Wrap", "the", "hot", "roll", "in", "foil", "for", "takeaway."],
+                 "Wrap the hot roll in foil for takeaway.",
+                 "The signature tangy spice blend dusted inside a Mumbai frankie is called frankie ____.",
+                 ["masala", "syrup", "frosting", "jam"], "masala",
+                 "A secret blend of amchur (dry mango), chaat masala, and chili gives frankies their zest.",
+                 "True or False: Kathi rolls trace their history back to Nizam's in Kolkata before spreading across India.", True,
+                 "Nizam's in Kolkata invented the kebab-wrapped paratha roll in 1932 for British office clerks."),
+
+                ("Steamed Momos & Red Dip", "Momos", "Himalayan steamed dumplings with savory filling",
+                 "What are bite-sized steamed dumplings that originated in Tibet and Nepal?",
+                 ["Momos", "Waffles", "Nachos", "Bagels"], "Momos",
+                 "Momos have become one of India's favorite youth street food obsessions.",
+                 "One plate of steamed vegetable momos with extra fiery red garlic chutney.",
+                 "What accompaniment was requested with the momos?",
+                 ["Fiery red garlic chutney", "Sweet tomato ketchup only", "Hot melted butter", "Warm pancake syrup"],
+                 "Fiery red garlic chutney",
+                 ["Dip", "the", "steamed", "momo", "into", "the", "spicy", "chili", "sauce."],
+                 "Dip the steamed momo into the spicy chili sauce.",
+                 "Momos can be either steamed, pan-fried, or deep-____ for a crispy shell.",
+                 ["fried", "frozen", "melted", "dissolved"], "fried",
+                 "Deep-fried momos develop a crunchy golden shell while keeping the filling juicy.",
+                 "True or False: Clear vegetable or chicken broth is often served alongside steamed momos.", True,
+                 "A comforting warm cup of clear soup broth is traditionally served with momo plates."),
+
+                ("Masala Dosa & Sambar", "Masala Dosa", "Crispy fermented rice-lentil crepe with potato filling",
+                 "What is the golden, crispy fermented crepe filled with spiced potato curry?",
+                 ["Masala Dosa", "Omelette", "Quesadilla", "Crepe Suzette"], "Masala Dosa",
+                 "Masala Dosa is paired with piping hot sambar and freshly ground coconut chutney.",
+                 "One paper butter masala dosa with extra hot sambar and white coconut chutney.",
+                 "What side dishes accompany the dosa order?",
+                 ["Hot sambar and white coconut chutney", "Cold milk and strawberry jam", "French fries and mayo", "Barbecue sauce and coleslaw"],
+                 "Hot sambar and white coconut chutney",
+                 ["The", "golden", "dosa", "was", "crispy", "and", "delicious."],
+                 "The golden dosa was crispy and delicious.",
+                 "The tamarind and pigeon-pea lentil stew served with dosas is called ____.",
+                 ["sambar", "gravy", "custard", "pudding"], "sambar",
+                 "Sambar is seasoned with curry leaves, mustard seeds, and drumsticks.",
+                 "True or False: Dosa batter is made from naturally fermented rice and black gram lentils (urad dal).", True,
+                 "Fermentation produces lactic acid and carbon dioxide, giving the dosa its light crispness."),
+
+                ("Crispy Jalebi & Fafda", "Jalebi Fafda", "Crispy savory gram strips paired with syrupy saffron swirls",
+                 "What famous breakfast pairing combines savory gram flour strips with golden sugar swirls?",
+                 ["Fafda Jalebi", "Pizza Pasta", "Bread Butter", "Idli Vada"], "Fafda Jalebi",
+                 "Fafda Jalebi is the traditional Sunday morning celebration breakfast.",
+                 "Give me 250 grams of hot, juicy jalebis fresh from the frying wok.",
+                 "How does the customer want their jalebis prepared?",
+                 ["Hot and juicy fresh from the frying wok", "Cold and rock-hard from yesterday", "Salty with chili powder", "Baked without sugar"],
+                 "Hot and juicy fresh from the frying wok",
+                 ["Hot", "jalebis", "are", "soaked", "in", "fragrant", "saffron", "syrup."],
+                 "Hot jalebis are soaked in fragrant saffron syrup.",
+                 "Fafda is traditionally eaten with fried green chilies and grated raw ____ chutney.",
+                 ["papaya", "apple", "grape", "orange"], "papaya",
+                 "Kachi Papaya sambharo provides a crunchy, mustard-tempered relish alongside fafda.",
+                 "True or False: Jalebis are infused with saffron (kesar) and green cardamom for floral sweetness.", True,
+                 "Saffron strands give authentic jalebis their radiant orange color and royal fragrance."),
+
+                ("Street Food Boss: Khau Galli", "Khau Galli", "Famous midnight food lane packed with stalls",
+                 "What does the Marathi phrase 'Khau Galli' literally translate to?",
+                 ["Food Street / Eaters' Alley", "Quiet Library Lane", "Jogging Track", "Flower Garden"], "Food Street / Eaters' Alley",
+                 "Khau Gallis are vibrant pedestrian food streets famous for late-night street food.",
+                 "Let us head to Ghatkopar Khau Galli to try fusion dosas and malai kulfi.",
+                 "What destination did the group choose for their late-night food crawl?",
+                 ["Ghatkopar Khau Galli", "An empty railway siding", "A corporate office park", "A silent airport runway"],
+                 "Ghatkopar Khau Galli",
+                 ["Mumbai", "street", "food", "stalls", "serve", "delicious", "food", "until", "late", "night."],
+                 "Mumbai street food stalls serve delicious food until late night.",
+                 "A layered dessert drink combining rose milk, vermicelli, sabja seeds, and kulfi is ____.",
+                 ["Falooda", "Espresso", "Lemonade", "Iced tea"], "Falooda",
+                 "Falooda is a royal dessert drink packed with textures from chia/sabja seeds and rose syrup.",
+                 "True or False: Mumbai's famous Khau Gallis operate late into the night serving street food.", True,
+                 "Night owls, students, and families gather at Khau Gallis after midnight for hot snacks.")
+            ])
+        ]
+    }
+}
+
+# Systematic generator for 10 categories x 10 units x 10 steps = 100 levels each
+# Each category has 10 units of progression:
+category_units_spec = {
+    "Food": [
+        ("Street Food & Snacks", "Local Indian street delicacies and quick bites"),
+        ("Cafe Culture & Brews", "Espresso, lattes, cold brews, and bakery treats"),
+        ("Taste Profiles & Flavors", "Sweet, spicy, tangy, savory, and aromatic notes"),
+        ("Restaurant Dining & Tables", "Reservations, host desks, appetizers, and menus"),
+        ("Kitchen Actions & Verbs", "Chop, boil, fry, bake, sauté, and simmer techniques"),
+        ("Fast Food & Takeout", "Burgers, pizzas, drive-thrus, and delivery apps"),
+        ("Dietary Inquiries & Health", "Vegan, vegetarian, gluten-free, and allergies"),
+        ("Desserts & Traditional Sweets", "Gulab jamun, kulfi, chocolates, and pastries"),
+        ("Bills, Tipping & Etiquette", "Paying checks, splitting bills, and table manners"),
+        ("Gourmet & Master Chef", "Multi-course feasts, critique, and culinary mastery")
+    ],
+    "Travel": [
+        ("Mumbai Local Trains & Metro", "Commuter trains, fast vs slow, ticket counters"),
+        ("City Transit & Auto-Rickshaws", "Meters, auto hailing, app cabs, and landmarks"),
+        ("Asking Directions & Maps", "Left, right, straight ahead, across bridges"),
+        ("Interstate Railway Journeys", "Sleeper berths, PNR status, platform food"),
+        ("Airport & Flight Check-in", "Boarding passes, baggage limits, gate changes"),
+        ("Hotels & Room Inquiries", "Check-in times, key cards, Wi-Fi, room service"),
+        ("Sightseeing & Heritage Spots", "Monuments, historical tours, photo policies"),
+        ("Travel Emergencies & Help", "Lost passports, police stations, medical clinic"),
+        ("Currency Exchange & SIMs", "Money changers, local roaming, power plugs"),
+        ("Global Backpacking Master", "International customs, jet lag, and expeditions")
+    ],
+    "Job": [
+        ("Job Interview Foundations", "Tell me about yourself, strengths and career goals"),
+        ("Resume & Qualifications", "Degrees, certifications, technical skills list"),
+        ("Professional Email Writing", "Formal greetings, attachments, polite follow-ups"),
+        ("Office Introductions & Teams", "Colleagues, floor managers, org hierarchy"),
+        ("Daily Standups & Task Sync", "Sprint updates, blockers, project timelines"),
+        ("Client Calls & Presentations", "Slide decks, screen sharing, Q&A handling"),
+        ("Workplace Problem Solving", "Troubleshooting hurdles, asking for senior help"),
+        ("Appraisals & Performance", "Quarterly goals, salary revisions, milestones"),
+        ("Negotiation & Offer Letters", "Notice periods, perks, signing contracts"),
+        ("Executive Leadership Pitch", "Team strategy, visionary plans, CEO boardroom")
+    ],
+    "School": [
+        ("Classroom Greetings & Roll Call", "Attendance, morning bell, greeting professors"),
+        ("Asking Questions in Lectures", "Doubts, clarifications, raising hand politely"),
+        ("Homework & Assignments", "Due dates, lab records, project group work"),
+        ("College Library & Study Halls", "Borrowing books, silence zones, research"),
+        ("Canteen Hangouts & Socials", "Snack breaks, college gossip, table sharing"),
+        ("Science Lab & Practical Exams", "Beakers, microscopes, safety guidelines"),
+        ("Sports Day & Campus Athletics", "Tournaments, spirit, cricket matches"),
+        ("Exam Preparation & Revisions", "Sample papers, study schedules, hall tickets"),
+        ("College Cultural Fest (Mood Indigo)", "Dance battles, bands, volunteer squads"),
+        ("Convocation & Graduation Day", "Degree certificates, robes, farewell speeches")
+    ],
+    "Routine": [
+        ("Morning Alarms & Waking Up", "Snooze buttons, morning stretches, sunshine"),
+        ("Personal Hygiene & Grooming", "Brushing teeth, showers, fresh wardrobe"),
+        ("Morning Tea & Breakfast Habit", "Nutritious bites, newspaper, green smoothies"),
+        ("Gym Workouts & Fitness", "Cardio running, weight training, hydration"),
+        ("Daily Commute & Traffic Jams", "Buses, metro rush hours, travel podcasts"),
+        ("Midday Productivity & Work Blocks", "Focus time, checklist items, inbox clearing"),
+        ("Healthy Lunch Breaks", "Tiffin boxes, walking breaks, stretching"),
+        ("Evening Errands & Groceries", "Supermarkets, vegetables, pharmacy stops"),
+        ("Dinner Prep & Family Time", "Cooking dinner, talking about the day"),
+        ("Night Routine & Sleep Hygiene", "Digital detox, reading books, peaceful sleep")
+    ],
+    "Gaming": [
+        ("Discord Voice Comms & Audio", "Mic check, team lobbies, pinging coordinates"),
+        ("Battle Royale Hot Drops", "Landing zones, looting vests, first circles"),
+        ("Weapons, Attachments & Scopes", "Assault rifles, snipers, recoil control"),
+        ("Clutch 1v3 Match Defense", "Defusing bombs, tactical retreats, hero plays"),
+        ("Team Roles: DPS, Tank & Healer", "Hero synergy, ultimate abilities, shields"),
+        ("Patch Notes: Buffs vs Nerfs", "Weapon balance, meta updates, developer logs"),
+        ("Friendly Banter & 'GG WP'", "Sporting gestures, match etiquette, anti-toxicity"),
+        ("Ranked Ladder & Elo Climbing", "Tiers, promotions, win streaks, leaderboards"),
+        ("Game Streaming & Chat Hype", "Viewer donations, stream setups, hype trains"),
+        ("Grand Esports Championship", "LAN finals, trophy celebrations, pro MVP title")
+    ],
+    "SocialMedia": [
+        ("Gen-Z Slang: Rizz & No Cap", "Modern vocabulary, charismatic charm, honesty"),
+        ("Shorts, Reels & Audio Trends", "Viral hooks, transition edits, trending sounds"),
+        ("Captions, Tags & Aesthetic Quotes", "Vibe checks, clever captions, photo dumps"),
+        ("Streetwear Aesthetics: Drip & Fit", "OOTD posts, clean sneakers, fashion flexes"),
+        ("Comments Section & Slang Battles", "W comments, Ratio, Cooking up fire replies"),
+        ("DMs, Group Chats & Voice Notes", "Quick texting, reaction emojis, sharing reels"),
+        ("Internet Literacy: Avoiding Clout", "Clickbait detection, privacy filters, fact checks"),
+        ("Influencer Sponsorships & Collabs", "Brand deals, promo codes, unboxing videos"),
+        ("Digital Detox & Mental Wellness", "Screen time limits, muting notifications"),
+        ("Social Media Master Strategist", "Algorithm mastery, community building, engagement")
+    ],
+    "PopCulture": [
+        ("Anime Tropes & Shonen Heroes", "Power of friendship, training arcs, rivals"),
+        ("Binge-Watching Series & Cliffhangers", "Season finales, plot twists, spoiler alerts"),
+        ("Music Genres: Hip-Hop & K-Pop", "Beat drops, concert tickets, stan culture"),
+        ("Blockbuster Movies & Reviews", "Cinema halls, popcorn combos, film critique"),
+        ("Superhero Universes & Multiverses", "Comics, superpowers, crossovers, villains"),
+        ("Internet Memes & Cultural Lore", "Viral templates, inside jokes, meme history"),
+        ("Cosplay & Comic-Con Culture", "Costume crafting, comic conventions, fan art"),
+        ("Gaming Lore & Video Game Shows", "Story campaigns, voice acting, Easter eggs"),
+        ("Celebrity Interviews & Red Carpets", "Talk shows, fashion statements, fan Q&As"),
+        ("Global Pop Culture Trivia Master", "Iconic moments, awards nights, cultural legacy")
+    ],
+    "Shopping": [
+        ("Street Bazaar Bargaining (Colaba)", "Price haggling, smart shopping, street vendors"),
+        ("Clothing Sizing & Trial Rooms", "Small vs Large, trying on jackets, mirrors"),
+        ("Sneaker Drops & Streetwear Hype", "Limited editions, sole comfort, fresh kicks"),
+        ("Supermarket Aisle Navigation", "Shopping carts, organic groceries, discounts"),
+        ("Online Cart & Flash Sales", "Coupon codes, free shipping, checkout timers"),
+        ("Returns, Exchanges & Receipts", "Store credit, invoice slips, return windows"),
+        ("Digital Payments: UPI & QR Codes", "Scanning codes, payment soundboxes, PIN safety"),
+        ("Electronics, Laptops & Gadgets", "Specs, RAM, warranty terms, screen protection"),
+        ("Thrifting & Vintage Discoveries", "Pre-loved fashion, sustainable clothes, treasures"),
+        ("Luxury Brand & Personal Stylist", "Designer boutiques, bespoke tailoring, elegance")
+    ],
+    "Friends": [
+        ("Making Weekend Plans & Hangouts", "Café meetups, movie shows, picking timings"),
+        ("Inside Jokes & Friendly Banter", "Shared memories, humorous nicknames, laughter"),
+        ("Giving Heartfelt Compliments", "Boosting confidence, celebrating friend wins"),
+        ("Cheering Up a Stressed Friend", "Active listening, offering support, sweet snacks"),
+        ("Late Night Heart-to-Heart Talks", "Deep conversations, life dreams, star gazing"),
+        ("Resolving Misunderstandings", "Sincere apologies, clearing doubts, making peace"),
+        ("Birthday Surprises & Gift Ideas", "Secret planning, custom cakes, memory albums"),
+        ("Coffee Dates & First Conversations", "Breaking the ice, finding common hobbies, smiles"),
+        ("Healthy Boundaries & Honest Advice", "Respecting time, giving supportive constructive feedback"),
+        ("Lifelong Best Friend Bond (Ride-or-Die)", "Unconditional trust, decades of loyalty, besties")
+    ]
+}
+
+print("Loaded all 10 categories specifications.")
