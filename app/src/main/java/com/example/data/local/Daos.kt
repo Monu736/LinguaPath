@@ -61,10 +61,33 @@ interface UserDao {
 
     @Query("UPDATE user_profile SET streakFreezeCount = streakFreezeCount + 1 WHERE id = 1")
     suspend fun addStreakFreeze()
+
+    @Query("UPDATE user_profile SET avatarFrame = :frame WHERE id = 1")
+    suspend fun equipFrame(frame: String)
+
+    @Query("UPDATE user_profile SET unlockedFrames = :frames WHERE id = 1")
+    suspend fun updateUnlockedFrames(frames: String)
+
+    @Query("UPDATE user_profile SET unlockedAvatars = :avatars WHERE id = 1")
+    suspend fun updateUnlockedAvatars(avatars: String)
+
+    @Query("UPDATE user_profile SET avatarEmoji = :avatar WHERE id = 1")
+    suspend fun equipAvatar(avatar: String)
+
+    @Query("UPDATE user_profile SET userName = :name, userEmail = :email, userPhone = :phone, authProvider = :authProvider, isLoggedIn = 1 WHERE id = 1")
+    suspend fun authenticateUser(name: String, email: String, phone: String, authProvider: String)
+
+    @Query("UPDATE user_profile SET userName = :name, userEmail = :email, profilePhotoUrl = :photoUrl, authProvider = 'GOOGLE', isLoggedIn = 1 WHERE id = 1")
+    suspend fun authenticateGoogleUser(name: String, email: String, photoUrl: String?)
+
+    @Query("UPDATE user_profile SET isLoggedIn = 0, profilePhotoUrl = NULL WHERE id = 1")
+    suspend fun signOutUser()
 }
 
 @Dao
 interface QuizLevelProgressDao {
+    @Query("UPDATE quiz_level_progress SET isUnlocked = 1 WHERE languageCode = :langCode AND categoryKey = :categoryKey AND levelNumber <= :upToLevel")
+    suspend fun unlockLevelsUpTo(langCode: String, categoryKey: String, upToLevel: Int)
     @Query("SELECT * FROM quiz_level_progress WHERE languageCode = :langCode AND categoryKey = :categoryKey ORDER BY levelNumber ASC")
     fun getLevelsForCategory(langCode: String, categoryKey: String): Flow<List<QuizLevelProgress>>
 

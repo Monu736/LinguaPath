@@ -1,0 +1,6 @@
+{
+  "summary":  "Implementation plan for Lingopath: renaming the app, shuffling quiz options to prevent predictable answers, completely removing fake leaderboards, expanding the diamond shop with unlockable frames/avatars/level unlocks, and implementing real Google Sign-In and Email/Password authentication.",
+  "updatedAt":  "2026-10-25T18:17:15.052659230Z",
+  "requestFeedback":  true,
+  "userFacing":  true
+}

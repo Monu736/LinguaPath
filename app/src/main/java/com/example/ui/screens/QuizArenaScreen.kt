@@ -1,5 +1,6 @@
 package com.example.ui.screens
 
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.Spring
@@ -7,8 +8,11 @@ import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -74,8 +78,8 @@ import com.example.data.model.QuizQuestion
 import com.example.data.model.QuizType
 import com.example.data.model.SupportedLanguage
 import com.example.quiz.CategoryQuizData
+import com.example.ui.components.DuoConfettiExplosion
 import com.example.ui.components.DuoFeedbackBanner
-import com.example.ui.components.DuoLeaguesDialog
 import com.example.ui.components.DuoOptionCard
 import com.example.ui.components.DuoOptionState
 import com.example.ui.components.DuoShopDialog
@@ -107,6 +111,11 @@ fun QuizArenaScreen(
     onUseHeart: () -> Unit,
     onBuyRefillHearts: () -> Unit,
     onBuyStreakFreeze: () -> Unit,
+    onBuyFrame: (String, Int) -> Unit = { _, _ -> },
+    onEquipFrame: (String) -> Unit = {},
+    onBuyAvatar: (String, Int) -> Unit = { _, _ -> },
+    onEquipAvatar: (String) -> Unit = {},
+    onUnlockFastPass: (Int) -> Unit = {},
     onCloseQuiz: () -> Unit,
     onSpeak: (String, String) -> Unit,
     modifier: Modifier = Modifier
@@ -118,7 +127,6 @@ fun QuizArenaScreen(
     val activeQuiz = uiState.activeQuizLevelData
 
     var isShopDialogOpen by remember { mutableStateOf(false) }
-    var isLeaguesDialogOpen by remember { mutableStateOf(false) }
     var viewModeWindingPath by remember { mutableStateOf(true) }
 
     Box(modifier = modifier.fillMaxSize()) {
@@ -268,6 +276,11 @@ fun QuizArenaScreen(
                 userGems = profile?.gems ?: 450,
                 streakFreezes = profile?.streakFreezeCount ?: 2,
                 currentHearts = profile?.hearts ?: 5,
+                equippedFrame = profile?.avatarFrame ?: "DEFAULT",
+                unlockedFrames = profile?.unlockedFrames ?: "DEFAULT",
+                equippedAvatar = profile?.avatarEmoji ?: "⚡",
+                unlockedAvatars = profile?.unlockedAvatars ?: "⚡,🦉",
+                activeCategoryName = selectedCategory.title,
                 onBuyRefill = {
                     onBuyRefillHearts()
                     isShopDialogOpen = false
@@ -276,17 +289,12 @@ fun QuizArenaScreen(
                     onBuyStreakFreeze()
                     isShopDialogOpen = false
                 },
+                onBuyFrame = onBuyFrame,
+                onEquipFrame = onEquipFrame,
+                onBuyAvatar = onBuyAvatar,
+                onEquipAvatar = onEquipAvatar,
+                onUnlockFastPass = onUnlockFastPass,
                 onDismiss = { isShopDialogOpen = false }
-            )
-        }
-
-        // Duolingo Leagues Leaderboard Dialog
-        if (isLeaguesDialogOpen) {
-            DuoLeaguesDialog(
-                userRank = profile?.leagueRank ?: 4,
-                userXp = profile?.xp ?: 240,
-                currentLeague = profile?.currentLeague ?: "Ruby League",
-                onDismiss = { isLeaguesDialogOpen = false }
             )
         }
     }
@@ -687,162 +695,180 @@ fun InteractiveDuoQuizRunner(
 
                     Spacer(modifier = Modifier.height(14.dp))
 
-                    // Question Prompt with Mascot Speech Bubble
-                    Row(
-                        verticalAlignment = Alignment.Top,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        // Friendly Coach Mascot Icon
-                        Box(
+                    // Question Content with Animated Horizontal Sliding Transitions
+                    AnimatedContent(
+                        targetState = currentQuestionIndex,
+                        transitionSpec = {
+                            (slideInHorizontally { width -> width / 3 } + fadeIn())
+                                .togetherWith(slideOutHorizontally { width -> -width / 3 } + fadeOut())
+                        },
+                        label = "duo_question_slide_transition",
+                        modifier = Modifier.weight(1f)
+                    ) { qIndex ->
+                        val activeQ = quizData.questions.getOrNull(qIndex) ?: currentQuestion
+                        Column(
                             modifier = Modifier
-                                .size(48.dp)
-                                .clip(CircleShape)
-                                .background(DuoGreen.copy(alpha = 0.2f)),
-                            contentAlignment = Alignment.Center
+                                .fillMaxWidth()
                         ) {
-                            Text(text = "🦉", fontSize = 28.sp)
-                        }
-
-                        Spacer(modifier = Modifier.width(10.dp))
-
-                        Card(
-                            shape = RoundedCornerShape(16.dp),
-                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)),
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            Column(modifier = Modifier.padding(14.dp)) {
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                    verticalAlignment = Alignment.CenterVertically
+                            // Question Prompt with Mascot Speech Bubble
+                            Row(
+                                verticalAlignment = Alignment.Top,
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                // Friendly Coach Mascot Icon
+                                Box(
+                                    modifier = Modifier
+                                        .size(48.dp)
+                                        .clip(CircleShape)
+                                        .background(DuoGreen.copy(alpha = 0.2f)),
+                                    contentAlignment = Alignment.Center
                                 ) {
-                                    Text(
-                                        text = currentQuestion.question,
-                                        style = MaterialTheme.typography.titleMedium,
-                                        fontWeight = FontWeight.ExtraBold
-                                    )
-                                    if (currentQuestion.audioText != null) {
-                                        IconButton(
-                                            onClick = { onSpeak(currentQuestion.audioText, language.code) },
-                                            modifier = Modifier
-                                                .size(36.dp)
-                                                .clip(CircleShape)
-                                                .background(DuoBlue.copy(alpha = 0.2f))
+                                    Text(text = "🦉", fontSize = 28.sp)
+                                }
+
+                                Spacer(modifier = Modifier.width(10.dp))
+
+                                Card(
+                                    shape = RoundedCornerShape(16.dp),
+                                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)),
+                                    modifier = Modifier.weight(1f)
+                                ) {
+                                    Column(modifier = Modifier.padding(14.dp)) {
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.SpaceBetween,
+                                            verticalAlignment = Alignment.CenterVertically
                                         ) {
-                                            Icon(
-                                                imageVector = Icons.Default.VolumeUp,
-                                                contentDescription = "Listen",
-                                                tint = DuoBlue,
-                                                modifier = Modifier.size(20.dp)
+                                            Text(
+                                                text = activeQ.question,
+                                                style = MaterialTheme.typography.titleMedium,
+                                                fontWeight = FontWeight.ExtraBold
+                                            )
+                                            if (activeQ.audioText != null) {
+                                                IconButton(
+                                                    onClick = { onSpeak(activeQ.audioText, language.code) },
+                                                    modifier = Modifier
+                                                        .size(36.dp)
+                                                        .clip(CircleShape)
+                                                        .background(DuoBlue.copy(alpha = 0.2f))
+                                                ) {
+                                                    Icon(
+                                                        imageVector = Icons.Default.VolumeUp,
+                                                        contentDescription = "Listen",
+                                                        tint = DuoBlue,
+                                                        modifier = Modifier.size(20.dp)
+                                                    )
+                                                }
+                                            }
+                                        }
+
+                                        if (!activeQ.subtitle.isNullOrBlank()) {
+                                            Spacer(modifier = Modifier.height(4.dp))
+                                            Text(
+                                                text = activeQ.subtitle,
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(20.dp))
+
+                            // Interactive Question Options with 3D Transitions
+                            when (activeQ.type) {
+                                QuizType.SENTENCE_ARRANGEMENT -> {
+                                    // Placed word slots
+                                    Surface(
+                                        shape = RoundedCornerShape(14.dp),
+                                        color = MaterialTheme.colorScheme.surfaceVariant,
+                                        border = BorderStroke(2.dp, DuoBlue.copy(alpha = 0.4f)),
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .height(72.dp)
+                                    ) {
+                                        FlowRow(
+                                            modifier = Modifier
+                                                .fillMaxSize()
+                                                .padding(8.dp),
+                                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                        ) {
+                                            placedWords.forEachIndexed { idx, word ->
+                                                DuoTactileButton(
+                                                    text = word,
+                                                    onClick = {
+                                                        placedWords.removeAt(idx)
+                                                        remainingWords.add(word)
+                                                    },
+                                                    faceColor = DuoBlue,
+                                                    shadowColor = DuoBlueDark,
+                                                    height = 40.dp,
+                                                    bevelDepth = 3.dp
+                                                )
+                                            }
+                                        }
+                                    }
+
+                                    Spacer(modifier = Modifier.height(16.dp))
+
+                                    Text(text = "Tap words to place in sentence:", style = MaterialTheme.typography.labelSmall)
+                                    Spacer(modifier = Modifier.height(6.dp))
+
+                                    FlowRow(
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                                    ) {
+                                        remainingWords.forEachIndexed { idx, word ->
+                                            DuoTactileButton(
+                                                text = word,
+                                                onClick = {
+                                                    placedWords.add(word)
+                                                    remainingWords.removeAt(idx)
+                                                },
+                                                faceColor = MaterialTheme.colorScheme.surface,
+                                                shadowColor = Color(0xFFCECECE),
+                                                textColor = MaterialTheme.colorScheme.onSurface,
+                                                height = 42.dp,
+                                                bevelDepth = 3.dp
                                             )
                                         }
                                     }
                                 }
 
-                                if (!currentQuestion.subtitle.isNullOrBlank()) {
-                                    Spacer(modifier = Modifier.height(4.dp))
-                                    Text(
-                                        text = currentQuestion.subtitle,
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                }
-                            }
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(20.dp))
-
-                    // Interactive Question Options with 3D Transitions
-                    when (currentQuestion.type) {
-                        QuizType.SENTENCE_ARRANGEMENT -> {
-                            // Placed word slots
-                            Surface(
-                                shape = RoundedCornerShape(14.dp),
-                                color = MaterialTheme.colorScheme.surfaceVariant,
-                                border = BorderStroke(2.dp, DuoBlue.copy(alpha = 0.4f)),
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(72.dp)
-                            ) {
-                                FlowRow(
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                        .padding(8.dp),
-                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                                ) {
-                                    placedWords.forEachIndexed { idx, word ->
-                                        DuoTactileButton(
-                                            text = word,
-                                            onClick = {
-                                                placedWords.removeAt(idx)
-                                                remainingWords.add(word)
-                                            },
-                                            faceColor = DuoBlue,
-                                            shadowColor = DuoBlueDark,
-                                            height = 40.dp,
-                                            bevelDepth = 3.dp
-                                        )
+                                 else -> {
+                                    val currentOptions = remember(activeQ.id) {
+                                        if (activeQ.type == QuizType.TRUE_FALSE) activeQ.options else activeQ.options.shuffled()
                                     }
-                                }
-                            }
-
-                            Spacer(modifier = Modifier.height(16.dp))
-
-                            Text(text = "Tap words to place in sentence:", style = MaterialTheme.typography.labelSmall)
-                            Spacer(modifier = Modifier.height(6.dp))
-
-                            FlowRow(
-                                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                verticalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                remainingWords.forEachIndexed { idx, word ->
-                                    DuoTactileButton(
-                                        text = word,
-                                        onClick = {
-                                            placedWords.add(word)
-                                            remainingWords.removeAt(idx)
-                                        },
-                                        faceColor = MaterialTheme.colorScheme.surface,
-                                        shadowColor = Color(0xFFCECECE),
-                                        textColor = MaterialTheme.colorScheme.onSurface,
-                                        height = 42.dp,
-                                        bevelDepth = 3.dp
-                                    )
-                                }
-                            }
-                        }
-
-                        else -> {
-                            Column(
-                                verticalArrangement = Arrangement.spacedBy(12.dp),
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                currentQuestion.options.forEachIndexed { optIndex, opt ->
-                                    val isSelected = selectedAnswer == opt
-                                    val optState = when {
-                                        isAnswerChecked && opt == currentQuestion.correctAnswer -> DuoOptionState.CORRECT
-                                        isAnswerChecked && isSelected && opt != currentQuestion.correctAnswer -> DuoOptionState.WRONG
-                                        isSelected -> DuoOptionState.SELECTED
-                                        else -> DuoOptionState.DEFAULT
-                                    }
-
-                                    DuoOptionCard(
-                                        text = opt,
-                                        state = optState,
-                                        leadingBadge = "${optIndex + 1}",
-                                        onClick = {
-                                            if (!isAnswerChecked) {
-                                                selectedAnswer = opt
+                                    Column(
+                                        verticalArrangement = Arrangement.spacedBy(12.dp),
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
+                                        currentOptions.forEachIndexed { optIndex, opt ->
+                                            val isSelected = selectedAnswer == opt
+                                            val optState = when {
+                                                isAnswerChecked && opt == activeQ.correctAnswer -> DuoOptionState.CORRECT
+                                                isAnswerChecked && isSelected && opt != activeQ.correctAnswer -> DuoOptionState.WRONG
+                                                isSelected -> DuoOptionState.SELECTED
+                                                else -> DuoOptionState.DEFAULT
                                             }
+
+                                            DuoOptionCard(
+                                                text = opt,
+                                                state = optState,
+                                                leadingBadge = "${optIndex + 1}",
+                                                onClick = {
+                                                    if (!isAnswerChecked) {
+                                                        selectedAnswer = opt
+                                                    }
+                                                }
+                                            )
                                         }
-                                    )
+                                    }
                                 }
                             }
                         }
                     }
-
-                    Spacer(modifier = Modifier.weight(1f))
 
                     // Tactile Check Answer Button
                     if (!isAnswerChecked) {
@@ -925,79 +951,85 @@ fun DuoCelebrationScreen(
         onFinish(stars, score)
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        Text(text = "🦉", fontSize = 64.sp)
-        Spacer(modifier = Modifier.height(10.dp))
-        Text(
-            text = if (stars > 0) "LESSON COMPLETE!" else "PRACTICE COMPLETED",
-            fontSize = 24.sp,
-            fontWeight = FontWeight.ExtraBold,
-            color = DuoGreen
-        )
-        Text(
-            text = title,
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-
-        Spacer(modifier = Modifier.height(20.dp))
-
-        // Stars
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            repeat(3) { idx ->
-                val isEarned = idx < stars
-                Text(
-                    text = if (isEarned) "⭐" else "☆",
-                    fontSize = 44.sp,
-                    color = if (isEarned) DuoGold else Color.Gray
-                )
-            }
+    Box(modifier = Modifier.fillMaxSize()) {
+        if (stars > 0) {
+            DuoConfettiExplosion()
         }
 
-        Spacer(modifier = Modifier.height(20.dp))
-
-        // Rewards Strip
-        Card(
-            shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-            modifier = Modifier.fillMaxWidth()
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
         ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                horizontalArrangement = Arrangement.SpaceAround
-            ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(text = "+$xpReward XP", fontWeight = FontWeight.ExtraBold, fontSize = 20.sp, color = DuoGoldDark)
-                    Text(text = "Total XP", style = MaterialTheme.typography.labelSmall)
-                }
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(text = "$accuracy%", fontWeight = FontWeight.ExtraBold, fontSize = 20.sp, color = DuoGreen)
-                    Text(text = "Accuracy", style = MaterialTheme.typography.labelSmall)
-                }
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(text = "+15 💎", fontWeight = FontWeight.ExtraBold, fontSize = 20.sp, color = DuoBlue)
-                    Text(text = "Gems Earned", style = MaterialTheme.typography.labelSmall)
+            Text(text = "🦉", fontSize = 64.sp)
+            Spacer(modifier = Modifier.height(10.dp))
+            Text(
+                text = if (stars > 0) "LESSON COMPLETE!" else "PRACTICE COMPLETED",
+                fontSize = 24.sp,
+                fontWeight = FontWeight.ExtraBold,
+                color = DuoGreen
+            )
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+
+            Spacer(modifier = Modifier.height(20.dp))
+
+            // Stars
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                repeat(3) { idx ->
+                    val isEarned = idx < stars
+                    Text(
+                        text = if (isEarned) "⭐" else "☆",
+                        fontSize = 44.sp,
+                        color = if (isEarned) DuoGold else Color.Gray
+                    )
                 }
             }
+
+            Spacer(modifier = Modifier.height(20.dp))
+
+            // Rewards Strip
+            Card(
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    horizontalArrangement = Arrangement.SpaceAround
+                ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(text = "+$xpReward XP", fontWeight = FontWeight.ExtraBold, fontSize = 20.sp, color = DuoGoldDark)
+                        Text(text = "Total XP", style = MaterialTheme.typography.labelSmall)
+                    }
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(text = "$accuracy%", fontWeight = FontWeight.ExtraBold, fontSize = 20.sp, color = DuoGreen)
+                        Text(text = "Accuracy", style = MaterialTheme.typography.labelSmall)
+                    }
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(text = "+15 💎", fontWeight = FontWeight.ExtraBold, fontSize = 20.sp, color = DuoBlue)
+                        Text(text = "Gems Earned", style = MaterialTheme.typography.labelSmall)
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(30.dp))
+
+            DuoTactileButton(
+                text = "CONTINUE ➡️",
+                onClick = onClose,
+                faceColor = DuoGreen,
+                shadowColor = DuoGreenDark,
+                modifier = Modifier.fillMaxWidth()
+            )
         }
-
-        Spacer(modifier = Modifier.height(30.dp))
-
-        DuoTactileButton(
-            text = "CONTINUE ➡️",
-            onClick = onClose,
-            faceColor = DuoGreen,
-            shadowColor = DuoGreenDark,
-            modifier = Modifier.fillMaxWidth()
-        )
     }
 }

@@ -201,4 +201,57 @@ class LanguageRepository(private val db: AppDatabase) {
         val grammar = db.grammarDao().searchGrammar(langCode, query)
         return words to grammar
     }
+
+    suspend fun buyAvatarFrame(frameKey: String, cost: Int) {
+        val profile = db.userDao().getUserProfileOnce() ?: return
+        if (profile.gems >= cost) {
+            db.userDao().spendGems(cost)
+            val currentFrames = profile.unlockedFrames.split(",").map { it.trim() }.toMutableSet()
+            currentFrames.add(frameKey)
+            db.userDao().updateUnlockedFrames(currentFrames.joinToString(","))
+            db.userDao().equipFrame(frameKey)
+        }
+    }
+
+    suspend fun equipAvatarFrame(frameKey: String) {
+        db.userDao().equipFrame(frameKey)
+    }
+
+    suspend fun buyAvatar(avatarEmoji: String, cost: Int) {
+        val profile = db.userDao().getUserProfileOnce() ?: return
+        if (profile.gems >= cost) {
+            db.userDao().spendGems(cost)
+            val currentAvatars = profile.unlockedAvatars.split(",").map { it.trim() }.toMutableSet()
+            currentAvatars.add(avatarEmoji)
+            db.userDao().updateUnlockedAvatars(currentAvatars.joinToString(","))
+            db.userDao().equipAvatar(avatarEmoji)
+        }
+    }
+
+    suspend fun equipAvatar(avatarEmoji: String) {
+        db.userDao().equipAvatar(avatarEmoji)
+    }
+
+    suspend fun unlockCategoryLevels(langCode: String, categoryKey: String, count: Int, cost: Int) {
+        val profile = db.userDao().getUserProfileOnce() ?: return
+        if (profile.gems >= cost) {
+            db.userDao().spendGems(cost)
+            // Find highest unlocked level in this category
+            val existing = db.quizLevelDao().getLevelById("${langCode}_${categoryKey}_1")
+            // Unlock next batch up to (e.g. up to 100)
+            db.quizLevelDao().unlockLevelsUpTo(langCode, categoryKey, count)
+        }
+    }
+
+    suspend fun authenticateUser(name: String, email: String, phone: String, authProvider: String) {
+        db.userDao().authenticateUser(name, email, phone, authProvider)
+    }
+
+    suspend fun authenticateGoogleUser(name: String, email: String, photoUrl: String?) {
+        db.userDao().authenticateGoogleUser(name, email, photoUrl)
+    }
+
+    suspend fun signOut() {
+        db.userDao().signOutUser()
+    }
 }

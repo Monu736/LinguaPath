@@ -49,6 +49,7 @@ import androidx.compose.ui.unit.sp
 import com.example.data.model.SupportedLanguage
 import com.example.ui.components.LanguageHeader
 import com.example.ui.theme.AmberTertiary
+import com.example.ui.theme.DuoGreen
 import com.example.ui.theme.EmeraldSecondary
 import com.example.ui.theme.IndigoPrimary
 import com.example.ui.viewmodel.TrainerUiState
@@ -58,6 +59,9 @@ fun ProfileScreen(
     uiState: TrainerUiState,
     onLanguageSelected: (SupportedLanguage) -> Unit,
     onSaveProfileDetails: (String, String, String, String) -> Unit,
+    onGoogleAuthenticated: ((name: String, email: String, photoUrl: String?) -> Unit)? = null,
+    onSignOut: (() -> Unit)? = null,
+    onAuthenticate: ((String, String, String, String) -> Unit)? = null,
     onToggleNotifications: (Boolean) -> Unit,
     onResetOnboarding: () -> Unit,
     modifier: Modifier = Modifier
@@ -104,18 +108,14 @@ fun ProfileScreen(
                         modifier = Modifier.padding(20.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Surface(
-                            shape = CircleShape,
-                            color = IndigoPrimary.copy(alpha = 0.15f),
-                            border = BorderStroke(2.dp, IndigoPrimary),
-                            modifier = Modifier
-                                .size(64.dp)
-                                .clickable { isEditDialogOpen = true }
-                        ) {
-                            Box(contentAlignment = Alignment.Center) {
-                                Text(text = profile?.avatarEmoji ?: "⚡", fontSize = 32.sp)
-                            }
-                        }
+                        com.example.ui.components.AvatarWithFrame(
+                            avatarEmoji = profile?.avatarEmoji ?: "⚡",
+                            frameKey = profile?.avatarFrame ?: "DEFAULT",
+                            photoUrl = profile?.profilePhotoUrl,
+                            size = 64.dp,
+                            fontSize = 32.sp,
+                            onClick = { isEditDialogOpen = true }
+                        )
                         Spacer(modifier = Modifier.width(16.dp))
                         Column(modifier = Modifier.weight(1f)) {
                             Row(
@@ -133,7 +133,7 @@ fun ProfileScreen(
                                     shape = RoundedCornerShape(8.dp),
                                     contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp)
                                 ) {
-                                    Text("Edit ✏️", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                    Text("Account ⚙️", fontSize = 11.sp, fontWeight = FontWeight.Bold)
                                 }
                             }
                             Text(
@@ -150,13 +150,13 @@ fun ProfileScreen(
                             Spacer(modifier = Modifier.height(6.dp))
                             Surface(
                                 shape = RoundedCornerShape(8.dp),
-                                color = EmeraldSecondary.copy(alpha = 0.15f)
+                                color = if (profile?.authProvider == "GOOGLE") DuoGreen.copy(alpha = 0.15f) else EmeraldSecondary.copy(alpha = 0.15f)
                             ) {
                                 Text(
-                                    text = "Account Logged In • Data Saved Locally",
+                                    text = if (profile?.authProvider == "GOOGLE") "🌐 Google Account Verified" else "Account Logged In • Data Saved",
                                     style = MaterialTheme.typography.labelSmall,
                                     fontWeight = FontWeight.Bold,
-                                    color = EmeraldSecondary,
+                                    color = if (profile?.authProvider == "GOOGLE") DuoGreen else EmeraldSecondary,
                                     modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
                                 )
                             }
@@ -360,6 +360,9 @@ fun ProfileScreen(
                 onSaveProfileDetails(name, email, phone, avatar)
                 isEditDialogOpen = false
             },
+            onGoogleAuthenticated = onGoogleAuthenticated,
+            onSignOut = onSignOut,
+            onAuthenticate = onAuthenticate,
             onDismiss = { isEditDialogOpen = false }
         )
     }

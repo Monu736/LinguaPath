@@ -159,6 +159,10 @@ data class UserProfile(
     val userPhone: String = "+91 98765 43210",
     val isLoggedIn: Boolean = true,
     val avatarEmoji: String = "⚡",
+    val avatarFrame: String = "DEFAULT",
+    val unlockedFrames: String = "DEFAULT",
+    val unlockedAvatars: String = "⚡,🦉",
+    val authProvider: String = "GOOGLE",
     val currentLanguageCode: String = "en",
     val nativeLanguage: String = "Hindi",
     val currentLevel: String = "Beginner",
@@ -178,7 +182,8 @@ data class UserProfile(
     val gems: Int = 450,
     val streakFreezeCount: Int = 2,
     val currentLeague: String = "Ruby League",
-    val leagueRank: Int = 4
+    val leagueRank: Int = 4,
+    val profilePhotoUrl: String? = null
 )
 
 @Entity(tableName = "quiz_level_progress")

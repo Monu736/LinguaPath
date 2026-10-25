@@ -113,6 +113,17 @@ class TrainerViewModel(application: Application) : AndroidViewModel(application)
 
         // Start observing initial language & category data
         observeLanguageData(_uiState.value.currentLanguage.code)
+
+        // Sync Firebase Auth state if user is already signed in with Google
+        val existingFirebaseUser = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser
+        if (existingFirebaseUser != null) {
+            val fName = existingFirebaseUser.displayName ?: "Google User"
+            val fEmail = existingFirebaseUser.email ?: ""
+            val fPhoto = existingFirebaseUser.photoUrl?.toString()
+            viewModelScope.launch {
+                repository.authenticateGoogleUser(fName, fEmail, fPhoto)
+            }
+        }
         observeCategoryLevels(_uiState.value.currentLanguage.code, _uiState.value.selectedQuizCategory.key)
         initializeAiCoachDefaults(_uiState.value.currentLanguage)
     }
@@ -352,6 +363,78 @@ class TrainerViewModel(application: Application) : AndroidViewModel(application)
     fun buyStreakFreeze() {
         viewModelScope.launch {
             repository.buyStreakFreeze()
+        }
+    }
+
+    fun buyAvatarFrame(frameKey: String, cost: Int) {
+        viewModelScope.launch {
+            repository.buyAvatarFrame(frameKey, cost)
+        }
+    }
+
+    fun equipAvatarFrame(frameKey: String) {
+        viewModelScope.launch {
+            repository.equipAvatarFrame(frameKey)
+        }
+    }
+
+    fun buyAvatar(avatarEmoji: String, cost: Int) {
+        viewModelScope.launch {
+            repository.buyAvatar(avatarEmoji, cost)
+        }
+    }
+
+    fun equipAvatar(avatarEmoji: String) {
+        viewModelScope.launch {
+            repository.equipAvatar(avatarEmoji)
+        }
+    }
+
+    fun unlockCategoryFastPass(categoryKey: String, count: Int, cost: Int) {
+        viewModelScope.launch {
+            repository.unlockCategoryLevels(_uiState.value.currentLanguage.code, categoryKey, count, cost)
+        }
+    }
+
+    fun authenticateUser(name: String, email: String, phone: String, authProvider: String) {
+        viewModelScope.launch {
+            repository.authenticateUser(name, email, phone, authProvider)
+        }
+    }
+
+    fun authenticateGoogleUser(name: String, email: String, photoUrl: String?) {
+        viewModelScope.launch {
+            repository.authenticateGoogleUser(name, email, photoUrl)
+            _uiState.update {
+                it.copy(
+                    userProfile = it.userProfile?.copy(
+                        userName = name,
+                        userEmail = email,
+                        profilePhotoUrl = photoUrl,
+                        authProvider = "GOOGLE",
+                        isLoggedIn = true
+                    )
+                )
+            }
+        }
+    }
+
+    fun signOut() {
+        viewModelScope.launch {
+            try {
+                com.google.firebase.auth.FirebaseAuth.getInstance().signOut()
+            } catch (e: Exception) {
+                android.util.Log.e("TrainerViewModel", "Sign out error", e)
+            }
+            repository.signOut()
+            _uiState.update {
+                it.copy(
+                    userProfile = it.userProfile?.copy(
+                        isLoggedIn = false,
+                        profilePhotoUrl = null
+                    )
+                )
+            }
         }
     }
 

@@ -5,11 +5,18 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -39,8 +46,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.testTag
+import android.view.SoundEffectConstants
 import com.example.ui.screens.HomeScreen
 import com.example.ui.screens.LiveAiAgentScreen
 import com.example.ui.screens.OnboardingScreen
@@ -107,34 +117,45 @@ fun LanguageTrainerApp(viewModel: TrainerViewModel) {
     )
 
     Box(modifier = Modifier.fillMaxSize()) {
+        val view = LocalView.current
+
         Scaffold(
             bottomBar = {
                 NavigationBar(modifier = Modifier.testTag("app_bottom_nav_bar")) {
                     navTabs.forEach { tab ->
                         val isSelected = currentTab == tab
+                        val iconScale by animateFloatAsState(
+                            targetValue = if (isSelected) 1.15f else 1.0f,
+                            animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy),
+                            label = "tab_icon_scale"
+                        )
+
                         NavigationBarItem(
                             selected = isSelected,
                             onClick = {
+                                view.playSoundEffect(SoundEffectConstants.CLICK)
                                 if (tab == AppNavTab.Practice) practiceInitialTab = 0
                                 currentTab = tab
                             },
                             icon = {
-                                if (tab == AppNavTab.Practice && uiState.activeMistakes.isNotEmpty()) {
-                                    BadgedBox(
-                                        badge = {
-                                            Badge { Text("${uiState.activeMistakes.size}") }
+                                Box(modifier = Modifier.scale(iconScale)) {
+                                    if (tab == AppNavTab.Practice && uiState.activeMistakes.isNotEmpty()) {
+                                        BadgedBox(
+                                            badge = {
+                                                Badge { Text("${uiState.activeMistakes.size}") }
+                                            }
+                                        ) {
+                                            Icon(
+                                                imageVector = if (isSelected) tab.selectedIcon else tab.unselectedIcon,
+                                                contentDescription = tab.title
+                                            )
                                         }
-                                    ) {
+                                    } else {
                                         Icon(
                                             imageVector = if (isSelected) tab.selectedIcon else tab.unselectedIcon,
                                             contentDescription = tab.title
                                         )
                                     }
-                                } else {
-                                    Icon(
-                                        imageVector = if (isSelected) tab.selectedIcon else tab.unselectedIcon,
-                                        contentDescription = tab.title
-                                    )
                                 }
                             },
                             label = { Text(tab.title) },
@@ -150,83 +171,120 @@ fun LanguageTrainerApp(viewModel: TrainerViewModel) {
                     .fillMaxSize()
                     .padding(innerPadding)
             ) {
-                when (currentTab) {
-                    AppNavTab.Home -> HomeScreen(
-                        uiState = uiState,
-                        onLanguageSelected = { viewModel.switchLanguage(it) },
-                        onSpeak = { text, lang -> viewModel.speakText(text, lang) },
-                        onToggleSaveWord = { viewModel.toggleSaveWord(it) },
-                        onNavigateToQuizArena = { category ->
-                            if (category != null) {
-                                viewModel.selectQuizCategory(category)
-                            }
-                            currentTab = AppNavTab.QuizArena
-                        },
-                        onNavigateToLiveAiAgent = {
-                            currentTab = AppNavTab.AiCoach
-                        },
-                        onNavigateToPractice = {
-                            practiceInitialTab = 0
-                            currentTab = AppNavTab.Practice
-                        },
-                        onBuyRefillHearts = { viewModel.buyRefillHearts() },
-                        onBuyStreakFreeze = { viewModel.buyStreakFreeze() },
-                        onSaveProfileDetails = { name, email, phone, avatar ->
-                            viewModel.updateProfileDetails(name, email, phone, avatar)
-                        },
-                        onNavigateToSearch = { isSearchOpen = true }
-                    )
+                AnimatedContent(
+                    targetState = currentTab,
+                    transitionSpec = {
+                        (fadeIn(animationSpec = tween(220)) + scaleIn(initialScale = 0.98f, animationSpec = tween(220)))
+                            .togetherWith(fadeOut(animationSpec = tween(160)))
+                    },
+                    label = "duo_tab_switch_transition"
+                ) { targetTab ->
+                    when (targetTab) {
+                        AppNavTab.Home -> HomeScreen(
+                            uiState = uiState,
+                            onLanguageSelected = { viewModel.switchLanguage(it) },
+                            onSpeak = { text, lang -> viewModel.speakText(text, lang) },
+                            onToggleSaveWord = { viewModel.toggleSaveWord(it) },
+                            onNavigateToQuizArena = { category ->
+                                if (category != null) {
+                                    viewModel.selectQuizCategory(category)
+                                }
+                                currentTab = AppNavTab.QuizArena
+                            },
+                            onNavigateToLiveAiAgent = {
+                                currentTab = AppNavTab.AiCoach
+                            },
+                            onNavigateToPractice = {
+                                practiceInitialTab = 0
+                                currentTab = AppNavTab.Practice
+                            },
+                            onBuyRefillHearts = { viewModel.buyRefillHearts() },
+                            onBuyStreakFreeze = { viewModel.buyStreakFreeze() },
+                            onBuyFrame = { frame, cost -> viewModel.buyAvatarFrame(frame, cost) },
+                            onEquipFrame = { frame -> viewModel.equipAvatarFrame(frame) },
+                            onBuyAvatar = { avatar, cost -> viewModel.buyAvatar(avatar, cost) },
+                            onEquipAvatar = { avatar -> viewModel.equipAvatar(avatar) },
+                            onUnlockFastPass = { cost -> viewModel.unlockCategoryFastPass(uiState.selectedQuizCategory.key, 5, cost) },
+                            onAuthenticate = { name, email, phone, provider ->
+                                viewModel.authenticateUser(name, email, phone, provider)
+                            },
+                            onGoogleAuthenticated = { name, email, photoUrl ->
+                                viewModel.authenticateGoogleUser(name, email, photoUrl)
+                            },
+                            onSignOut = {
+                                viewModel.signOut()
+                            },
+                            onSaveProfileDetails = { name, email, phone, avatar ->
+                                viewModel.updateProfileDetails(name, email, phone, avatar)
+                            },
+                            onNavigateToSearch = { isSearchOpen = true }
+                        )
 
-                    AppNavTab.QuizArena -> QuizArenaScreen(
-                        uiState = uiState,
-                        onLanguageSelected = { viewModel.switchLanguage(it) },
-                        onSelectCategory = { viewModel.selectQuizCategory(it) },
-                        onStartLevel = { category, lvl -> viewModel.startQuizLevel(category, lvl) },
-                        onFinishLevel = { category, lvl, stars, score ->
-                            viewModel.finishQuizLevel(category, lvl, stars, score)
-                        },
-                        onUseHeart = { viewModel.useHeartForMistake() },
-                        onBuyRefillHearts = { viewModel.buyRefillHearts() },
-                        onBuyStreakFreeze = { viewModel.buyStreakFreeze() },
-                        onCloseQuiz = { viewModel.closeActiveQuiz() },
-                        onSpeak = { text, lang -> viewModel.speakText(text, lang) }
-                    )
+                        AppNavTab.QuizArena -> QuizArenaScreen(
+                            uiState = uiState,
+                            onLanguageSelected = { viewModel.switchLanguage(it) },
+                            onSelectCategory = { viewModel.selectQuizCategory(it) },
+                            onStartLevel = { category, lvl -> viewModel.startQuizLevel(category, lvl) },
+                            onFinishLevel = { category, lvl, stars, score ->
+                                viewModel.finishQuizLevel(category, lvl, stars, score)
+                            },
+                            onUseHeart = { viewModel.useHeartForMistake() },
+                            onBuyRefillHearts = { viewModel.buyRefillHearts() },
+                            onBuyStreakFreeze = { viewModel.buyStreakFreeze() },
+                            onBuyFrame = { frame, cost -> viewModel.buyAvatarFrame(frame, cost) },
+                            onEquipFrame = { frame -> viewModel.equipAvatarFrame(frame) },
+                            onBuyAvatar = { avatar, cost -> viewModel.buyAvatar(avatar, cost) },
+                            onEquipAvatar = { avatar -> viewModel.equipAvatar(avatar) },
+                            onUnlockFastPass = { cost -> viewModel.unlockCategoryFastPass(uiState.selectedQuizCategory.key, 5, cost) },
+                            onCloseQuiz = { viewModel.closeActiveQuiz() },
+                            onSpeak = { text, lang -> viewModel.speakText(text, lang) }
+                        )
 
-                    AppNavTab.AiCoach -> LiveAiAgentScreen(
-                        uiState = uiState,
-                        onLanguageSelected = { viewModel.switchLanguage(it) },
-                        onSendMessage = { viewModel.sendLiveAiAgentMessage(it) },
-                        onStartMicListening = { onError -> viewModel.startLiveMicForAi(onError) },
-                        onStopMicListening = { viewModel.stopListening() },
-                        onSpeak = { text, lang -> viewModel.speakText(text, lang) }
-                    )
+                        AppNavTab.AiCoach -> LiveAiAgentScreen(
+                            uiState = uiState,
+                            onLanguageSelected = { viewModel.switchLanguage(it) },
+                            onSendMessage = { viewModel.sendLiveAiAgentMessage(it) },
+                            onStartMicListening = { onError -> viewModel.startLiveMicForAi(onError) },
+                            onStopMicListening = { viewModel.stopListening() },
+                            onSpeak = { text, lang -> viewModel.speakText(text, lang) }
+                        )
 
-                    AppNavTab.Practice -> PracticeScreen(
-                        uiState = uiState,
-                        onLanguageSelected = { viewModel.switchLanguage(it) },
-                        onSpeak = { text, lang -> viewModel.speakText(text, lang) },
-                        onUpdateSpacedRepetition = { item, remembered, difficulty ->
-                            viewModel.recordSpacedRepetitionResult(item, remembered, difficulty)
-                        },
-                        onResolveMistake = { viewModel.resolveMistake(it) },
-                        onRecordMistake = { cat, prompt, userAns, correctAns, exp ->
-                            viewModel.recordMistake(cat, prompt, userAns, correctAns, exp)
-                        },
-                        onEvaluateWriting = { exercise, userText ->
-                            viewModel.evaluateWriting(exercise, userText)
-                        },
-                        initialTab = practiceInitialTab
-                    )
+                        AppNavTab.Practice -> PracticeScreen(
+                            uiState = uiState,
+                            onLanguageSelected = { viewModel.switchLanguage(it) },
+                            onSpeak = { text, lang -> viewModel.speakText(text, lang) },
+                            onUpdateSpacedRepetition = { item, remembered, difficulty ->
+                                viewModel.recordSpacedRepetitionResult(item, remembered, difficulty)
+                            },
+                            onResolveMistake = { viewModel.resolveMistake(it) },
+                            onRecordMistake = { cat, prompt, userAns, correctAns, exp ->
+                                viewModel.recordMistake(cat, prompt, userAns, correctAns, exp)
+                            },
+                            onEvaluateWriting = { exercise, userText ->
+                                viewModel.evaluateWriting(exercise, userText)
+                            },
+                            initialTab = practiceInitialTab
+                        )
 
-                    AppNavTab.Profile -> ProfileScreen(
-                        uiState = uiState,
-                        onLanguageSelected = { viewModel.switchLanguage(it) },
-                        onSaveProfileDetails = { name, email, phone, avatar ->
-                            viewModel.updateProfileDetails(name, email, phone, avatar)
-                        },
-                        onToggleNotifications = { viewModel.toggleNotifications(it) },
-                        onResetOnboarding = { viewModel.resetOnboarding() }
-                    )
+                        AppNavTab.Profile -> ProfileScreen(
+                            uiState = uiState,
+                            onLanguageSelected = { viewModel.switchLanguage(it) },
+                            onSaveProfileDetails = { name, email, phone, avatar ->
+                                viewModel.updateProfileDetails(name, email, phone, avatar)
+                            },
+                            onAuthenticate = { name, email, phone, provider ->
+                                viewModel.authenticateUser(name, email, phone, provider)
+                            },
+                            onGoogleAuthenticated = { name, email, photoUrl ->
+                                viewModel.authenticateGoogleUser(name, email, photoUrl)
+                            },
+                            onSignOut = {
+                                viewModel.signOut()
+                            },
+                            onToggleNotifications = { viewModel.toggleNotifications(it) },
+                            onResetOnboarding = { viewModel.resetOnboarding() }
+                        )
+                    }
                 }
             }
         }

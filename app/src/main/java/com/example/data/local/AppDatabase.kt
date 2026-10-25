@@ -28,7 +28,7 @@ import kotlinx.coroutines.launch
         DailyChallenge::class,
         Achievement::class
     ],
-    version = 4,
+    version = 6,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {

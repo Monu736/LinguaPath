@@ -22,6 +22,6 @@ dependencyResolutionManagement {
   }
 }
 
-rootProject.name = "Linguapath"
+rootProject.name = "Lingopath"
 
 include(":app")

@@ -39,12 +39,22 @@ data class LevelLessonBlueprint(
             SupportedLanguage.ENGLISH -> if (tfAnswer) "True" else "False"
         }
 
+        // Sanitize audio options if any placeholder strings are detected
+        val cleanAudioOptions = audioOptions.map { opt ->
+            when (opt) {
+                "An unrelated wrong choice" -> "Could you repeat that more slowly please?"
+                "A negative complaint" -> "We have temporarily run out of items."
+                "Silence" -> "Let's review the menu options again."
+                else -> opt
+            }
+        }.shuffled()
+
         return listOf(
             QuizQuestion(
                 id = "${prefixId}_1",
                 type = QuizType.MULTIPLE_CHOICE,
                 question = mcqQuestion,
-                options = mcqOptions,
+                options = mcqOptions.shuffled(),
                 correctAnswer = mcqAnswer,
                 explanation = mcqExplain
             ),
@@ -53,7 +63,7 @@ data class LevelLessonBlueprint(
                 type = QuizType.LISTENING,
                 question = audioQuestion,
                 audioText = audioText,
-                options = audioOptions,
+                options = cleanAudioOptions,
                 correctAnswer = audioAnswer,
                 explanation = "Audio says: '$audioText'"
             ),
@@ -66,7 +76,7 @@ data class LevelLessonBlueprint(
                     SupportedLanguage.JAPANESE -> "正しい順序に並べ替えてください: (Unscramble):"
                     SupportedLanguage.ENGLISH -> "Arrange the words to form a correct sentence:"
                 },
-                scrambledWords = scrambleWords,
+                scrambledWords = scrambleWords.shuffled(),
                 targetSentence = targetSentence,
                 correctAnswer = targetSentence,
                 explanation = "Target sentence: $targetSentence"
@@ -75,7 +85,7 @@ data class LevelLessonBlueprint(
                 id = "${prefixId}_4",
                 type = QuizType.FILL_IN_BLANK,
                 question = fillQuestion,
-                options = fillOptions,
+                options = fillOptions.shuffled(),
                 correctAnswer = fillAnswer,
                 explanation = fillExplain
             ),

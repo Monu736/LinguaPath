@@ -56,7 +56,8 @@ import com.example.data.model.LifestyleCategory
 import com.example.data.model.SupportedLanguage
 import com.example.data.model.VocabularyItem
 import com.example.ui.components.AudioButton
-import com.example.ui.components.DuoLeaguesDialog
+import com.example.ui.components.AvatarWithFrame
+import com.example.ui.components.DuoDailyQuestsCard
 import com.example.ui.components.DuoShopDialog
 import com.example.ui.components.DuoTactileButton
 import com.example.ui.components.DuoTopBar
@@ -88,6 +89,14 @@ fun HomeScreen(
     onNavigateToPractice: () -> Unit,
     onBuyRefillHearts: () -> Unit,
     onBuyStreakFreeze: () -> Unit,
+    onBuyFrame: (String, Int) -> Unit = { _, _ -> },
+    onEquipFrame: (String) -> Unit = {},
+    onBuyAvatar: (String, Int) -> Unit = { _, _ -> },
+    onEquipAvatar: (String) -> Unit = {},
+    onUnlockFastPass: (Int) -> Unit = {},
+    onAuthenticate: ((String, String, String, String) -> Unit)? = null,
+    onGoogleAuthenticated: ((name: String, email: String, photoUrl: String?) -> Unit)? = null,
+    onSignOut: (() -> Unit)? = null,
     onSaveProfileDetails: (name: String, email: String, phone: String, avatar: String) -> Unit,
     onNavigateToSearch: () -> Unit,
     modifier: Modifier = Modifier
@@ -99,7 +108,6 @@ fun HomeScreen(
 
     var isProfileDialogOpen by remember { mutableStateOf(false) }
     var isShopDialogOpen by remember { mutableStateOf(false) }
-    var isLeaguesDialogOpen by remember { mutableStateOf(false) }
 
     Box(modifier = modifier.fillMaxSize()) {
         LazyColumn(
@@ -137,24 +145,18 @@ fun HomeScreen(
                         )
                     }
 
-                    // Profile Icon Button in top right
-                    Surface(
-                        shape = CircleShape,
-                        color = DuoBlue.copy(alpha = 0.15f),
-                        border = BorderStroke(2.dp, DuoBlue),
+                    // Profile Icon Button in top right with equipped frame
+                    AvatarWithFrame(
+                        avatarEmoji = profile?.avatarEmoji ?: "⚡",
+                        frameKey = profile?.avatarFrame ?: "DEFAULT",
+                        photoUrl = profile?.profilePhotoUrl,
+                        size = 42.dp,
+                        fontSize = 22.sp,
                         modifier = Modifier
                             .padding(end = 16.dp)
-                            .size(42.dp)
-                            .clickable { isProfileDialogOpen = true }
-                            .testTag("home_profile_icon_button")
-                    ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            Text(
-                                text = profile?.avatarEmoji ?: "⚡",
-                                fontSize = 22.sp
-                            )
-                        }
-                    }
+                            .testTag("home_profile_icon_button"),
+                        onClick = { isProfileDialogOpen = true }
+                    )
                 }
             }
 
@@ -177,7 +179,7 @@ fun HomeScreen(
                         Column {
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Text(
-                                    text = "🧭 Linguapath",
+                                    text = "🧭 Lingopath",
                                     style = MaterialTheme.typography.titleSmall,
                                     fontWeight = FontWeight.Black,
                                     color = DuoGreen
@@ -225,52 +227,18 @@ fun HomeScreen(
                 Spacer(modifier = Modifier.height(4.dp))
             }
 
-            // DUOLINGO LEADERBOARD STRIP (RUBY LEAGUE)
+            // DUOLINGO DAILY QUESTS CARD (XP, QUIZZES, PRACTICE)
             item {
-                Card(
-                    shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(containerColor = DuoPurple.copy(alpha = 0.12f)),
-                    border = BorderStroke(1.dp, DuoPurple.copy(alpha = 0.4f)),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 4.dp)
-                        .clickable { isLeaguesDialogOpen = true }
-                        .testTag("home_leagues_banner")
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 14.dp, vertical = 10.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(text = "🏆", fontSize = 24.sp)
-                            Spacer(modifier = Modifier.width(10.dp))
-                            Column {
-                                Text(
-                                    text = "Ruby League • Rank #4",
-                                    fontWeight = FontWeight.ExtraBold,
-                                    fontSize = 15.sp,
-                                    color = DuoPurple
-                                )
-                                Text(
-                                    text = "Top 5 promote to Diamond League",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
+                Box(modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)) {
+                    DuoDailyQuestsCard(
+                        earnedXp = profile?.xp ?: 1100,
+                        targetXp = 50,
+                        completedQuizzes = 2,
+                        targetQuizzes = 2,
+                        onClaimReward = {
+                            onBuyRefillHearts() // rewards gems / hearts
                         }
-
-                        DuoTactileButton(
-                            text = "LEADERBOARD",
-                            onClick = { isLeaguesDialogOpen = true },
-                            faceColor = DuoPurple,
-                            shadowColor = DuoPurpleDark,
-                            height = 36.dp,
-                            bevelDepth = 3.dp
-                        )
-                    }
+                    )
                 }
                 Spacer(modifier = Modifier.height(4.dp))
             }
@@ -553,6 +521,9 @@ fun HomeScreen(
                     onSaveProfileDetails(name, email, phone, avatar)
                     isProfileDialogOpen = false
                 },
+                onGoogleAuthenticated = onGoogleAuthenticated,
+                onSignOut = onSignOut,
+                onAuthenticate = onAuthenticate,
                 onDismiss = { isProfileDialogOpen = false }
             )
         }
@@ -563,6 +534,11 @@ fun HomeScreen(
                 userGems = profile?.gems ?: 450,
                 streakFreezes = profile?.streakFreezeCount ?: 2,
                 currentHearts = profile?.hearts ?: 5,
+                equippedFrame = profile?.avatarFrame ?: "DEFAULT",
+                unlockedFrames = profile?.unlockedFrames ?: "DEFAULT",
+                equippedAvatar = profile?.avatarEmoji ?: "⚡",
+                unlockedAvatars = profile?.unlockedAvatars ?: "⚡,🦉",
+                activeCategoryName = uiState.selectedQuizCategory.title,
                 onBuyRefill = {
                     onBuyRefillHearts()
                     isShopDialogOpen = false
@@ -571,17 +547,12 @@ fun HomeScreen(
                     onBuyStreakFreeze()
                     isShopDialogOpen = false
                 },
+                onBuyFrame = onBuyFrame,
+                onEquipFrame = onEquipFrame,
+                onBuyAvatar = onBuyAvatar,
+                onEquipAvatar = onEquipAvatar,
+                onUnlockFastPass = onUnlockFastPass,
                 onDismiss = { isShopDialogOpen = false }
-            )
-        }
-
-        // Duolingo Leagues Dialog
-        if (isLeaguesDialogOpen) {
-            DuoLeaguesDialog(
-                userRank = profile?.leagueRank ?: 4,
-                userXp = profile?.xp ?: 240,
-                currentLeague = profile?.currentLeague ?: "Ruby League",
-                onDismiss = { isLeaguesDialogOpen = false }
             )
         }
     }
